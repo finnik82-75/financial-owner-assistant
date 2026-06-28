@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Загрузить отчёт — Архитектура Бизнеса{% endblock %}
+
+{% block content %}
+
+<section class="page-hero">
+    <div class="container">
+        <div class="page-hero-kicker">АРХИТЕКТУРА БИЗНЕСА</div>
+        <h1>Загрузить управленческий отчёт</h1>
+        <p>Поддерживаются .xlsx, .xls и .pdf. До 10 файлов за один анализ, до 20 МБ на файл.</p>
+    </div>
+</section>
+
+<div class="page-body">
+    <div class="container">
+        <div class="upload-card">
+            <div class="section-label">Загрузка отчётности</div>
+            <h2>Загрузите управленческие отчёты</h2>
+            <p>Добавьте один или несколько файлов в формате Excel или PDF.
+               Система обработает данные и сформирует управленческий отчёт.</p>
+
+            {% if errors %}
+            <div class="error-block" style="margin-top:1.25rem;">
+                <strong>Ошибки при загрузке:</strong>
+                <ul>
+                    {% for e in errors %}
+                    <li>{{ e }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <form id="upload-form" class="upload-form" action="/upload" method="post" enctype="multipart/form-data">
+
+                <div class="drop-zone" id="drop-zone">
+                    <p>Перетащите файлы сюда или</p>
+                    <button type="button" id="select-files-btn" class="btn btn-secondary">
+                        Выбрать файлы
+                    </button>
+                    <input id="files" name="files" type="file" multiple accept=".xlsx,.xls,.pdf" hidden>
+                </div>
+
+                <ul id="file-list" class="file-list"></ul>
+
+                <button type="submit" id="submit-btn" disabled>
+                    Сформировать отчет
+                </button>
+                <p class="hint" style="margin-top:.6rem;">
+                    Система автоматически извлечёт и нормализует данные. Это может занять 30–90 секунд.
+                </p>
+
+            </form>
+        </div>
+
+        <div class="hints-block">
+            <h4>Как подготовить файл</h4>
+            <ul>
+                <li>БДР и ДДС можно загрузить одновременно</li>
+                <li>Excel: каждый тип отчёта на отдельном листе или в отдельном файле</li>
+                <li>PDF: таблицы, экспортированные из 1С или аналогичных систем</li>
+                <li>Сканы и изображения не поддерживаются</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

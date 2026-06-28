@@ -1,0 +1,17 @@
+cashflow:
+  net_cashflow:
+    priority:
+      - "cashflow_by_activity"
+      - "cash_balance_reconciliation"
+    conflict_action: "warn_and_use_more_detailed_source"
+
+  operating_cashflow:
+    priority:
+      - "cashflow_by_activity"
+
+pnl:
+  profit:
+    priority:
+      - "operating_profit"
+      - "profit_after_other_activity"
+      - "net_profit_proxy"

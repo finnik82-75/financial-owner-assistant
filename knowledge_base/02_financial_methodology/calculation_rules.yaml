@@ -1,0 +1,23 @@
+gross_profit:
+  formula: "revenue - cogs"
+  calculate_if_missing: true
+
+operating_profit:
+  formula: "gross_profit - operating_expenses"
+  calculate_if_missing: true
+
+net_profit_proxy:
+  source: "operating_profit"
+  use_if_net_profit_missing: true
+
+operating_outflows:
+  formula: "operating_cashflow - operating_inflows"
+  calculate_if_missing_or_inconsistent: true
+
+net_cashflow:
+  formula: "operating_cashflow + investment_cashflow + financial_cashflow"
+  priority: "activity_cashflows"
+
+cash_start:
+  formula: "cash_end - net_cashflow"
+  calculate_if_missing: true

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if upload_success %}Файлы загружены{% else %}Отчёт{% endif %} — Архитектура Бизнеса
+{% endblock %}
+
+{% block content %}
+
+<section class="page-hero">
+    <div class="container">
+        <div class="page-hero-kicker">АРХИТЕКТУРА БИЗНЕСА</div>
+        {% if upload_success %}
+        <h1>Файлы получены</h1>
+        <p>Файлы успешно сохранены. Следующий этап — извлечение и анализ данных.</p>
+        {% else %}
+        <h1>Отчёт</h1>
+        {% endif %}
+    </div>
+</section>
+
+<div class="page-body">
+    <div class="container">
+
+{% if upload_success %}
+
+<div class="status-message success">
+    Файлы успешно получены и сохранены. Следующий этап &mdash; извлечение данных.
+</div>
+
+<div class="report-section">
+    <h3>Загруженные файлы</h3>
+    <table class="kpi-table">
+        <thead>
+            <tr>
+                <th>Исходное имя</th>
+                <th>Сохранённое имя</th>
+                <th>Формат</th>
+                <th>Размер</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for f in saved_files %}
+            <tr>
+                <td>{{ f.original_filename }}</td>
+                <td><code>{{ f.saved_filename }}</code></td>
+                <td>{{ f.extension }}</td>
+                <td>{{ f.size_mb }} МБ</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="next-step-block">
+    <h3>Следующий шаг — извлечение данных</h3>
+    <p>
+        Система прочитает Excel-листы и PDF-страницы, извлечёт строки и таблицы,
+        сохранит результат в структурированный JSON.
+        Финансовый анализ будет выполнен после нормализации данных.
+    </p>
+
+    <form action="/extract" method="post" style="display:inline;">
+        {% for f in saved_files %}
+        <input type="hidden" name="saved_paths"    value="{{ f.saved_path }}">
+        <input type="hidden" name="original_names" value="{{ f.original_filename }}">
+        <input type="hidden" name="extensions"     value="{{ f.extension }}">
+        <input type="hidden" name="size_mbs"       value="{{ f.size_mb }}">
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">Извлечь данные</button>
+    </form>
+
+    <a href="/upload" class="btn btn-secondary" style="margin-left:.75rem;">
+        Загрузить другой отчёт
+    </a>
+</div>
+
+{% else %}
+
+<div class="status-message">
+    <p>Отчёт не найден или ещё не готов.</p>
+    <a href="/upload" class="btn btn-secondary">Загрузить новый отчёт</a>
+</div>
+
+{% endif %}
+
+    </div>
+</div>
+
+{% endblock %}

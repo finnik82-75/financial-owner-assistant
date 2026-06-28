@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Архитектура Бизнеса — ИИ-анализ управленческой отчётности{% endblock %}
+
+{% block content %}
+
+{# Hero: полноширинный тёмно-синий #}
+<section class="hero">
+    <div class="container hero-inner">
+        <div class="hero-content">
+            <div class="hero-kicker">АРХИТЕКТУРА БИЗНЕСА</div>
+            <h1>ИИ-анализ управленческой отчётности</h1>
+            <p>
+                Загрузите БДР, ДДС или управленческий отчёт. Сервис выделит ключевые
+                отклонения, риски и KPI собственника простым языком.
+            </p>
+            <a href="/upload" class="hero-cta">Загрузить отчёт</a>
+        </div>
+
+        <div class="hero-brand-card">
+            <img src="/static/img/logo.svg" alt="Архитектура Бизнеса" class="hero-logo">
+        </div>
+    </div>
+</section>
+
+{# 3 статичных info-карточки #}
+<section class="info-section">
+    <div class="container info-section-inner">
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="info-card__label">01</div>
+                <div class="info-card__title">БДР</div>
+                <div class="info-card__text">
+                    Бюджет доходов и расходов: выручка, маржинальность, операционная прибыль
+                    и точка безубыточности по месяцам и направлениям.
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-card__label">02</div>
+                <div class="info-card__title">ДДС</div>
+                <div class="info-card__text">
+                    Движение денежных средств: операционный, инвестиционный и финансовый потоки,
+                    кассовые разрывы и остаток на счетах.
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-card__label">03</div>
+                <div class="info-card__title">KPI собственника</div>
+                <div class="info-card__text">
+                    Ключевые показатели бизнеса в понятной управленческой форме: рейтинг проектов,
+                    риски и конкретные рекомендации.
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

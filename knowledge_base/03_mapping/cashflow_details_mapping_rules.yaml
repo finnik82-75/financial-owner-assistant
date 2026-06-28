@@ -1,0 +1,63 @@
+customer_inflows:
+  aliases:
+    - поступления от клиентов
+
+media_services_inflows:
+  aliases:
+    - поступления от медиауслуг
+
+intercompany_operating_inflows:
+  aliases:
+    - вго по операционной деятельности
+
+it_communication_services:
+  aliases:
+    - it, связь, сервисы
+    - ит, связь, сервисы
+
+bank_fees:
+  aliases:
+    - банковские комиссии
+
+payroll:
+  aliases:
+    - заработная плата
+
+marketing:
+  aliases:
+    - маркетинг и реклама
+
+employee_taxes:
+  aliases:
+    - налоги за сотрудников
+
+social_contributions:
+  aliases:
+    - взносы в фонды
+
+personal_income_tax:
+  aliases:
+    - ндфл
+
+income_tax:
+  aliases:
+    - налоги на доходы
+    - налог на прибыль
+
+materials:
+  aliases:
+    - оплата за тмц
+    - расходные материалы
+
+contractors:
+  aliases:
+    - оплата подрядчикам
+    - исполнителям за услуги
+
+other_operating_outflows:
+  aliases:
+    - прочие операционные выплаты
+
+intercompany_financing:
+  aliases:
+    - вго финансирование

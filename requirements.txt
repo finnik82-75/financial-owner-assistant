@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+python-multipart
+jinja2
+pandas
+openpyxl
+pdfplumber
+pymupdf
+python-dotenv
+pydantic
+openai
+pyyaml
+markdown

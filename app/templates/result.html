@@ -1,0 +1,768 @@
+{% extends "base.html" %}
+
+{% block title %}Результат анализа — Архитектура Бизнеса{% endblock %}
+
+{% block content %}
+
+<section class="result-hero">
+    <div class="container result-hero-inner">
+        <div class="result-logo-panel">
+            <img src="/static/img/logo.svg" alt="Архитектура Бизнеса" class="result-logo">
+        </div>
+        <div class="result-hero-content">
+            <div class="hero-kicker">АРХИТЕКТУРА БИЗНЕСА</div>
+            <h1>Результат анализа отчёта</h1>
+            <p>Финансовые показатели обработаны и подготовлены для управленческого анализа.</p>
+        </div>
+    </div>
+</section>
+
+<div class="container result-body">
+
+{# ── Status ── #}
+{% set status_cls = 'success' if result.status == 'success' else ('warning' if result.status == 'partial' else 'error') %}
+<div class="status-message {{ status_cls }}">
+    Обработка завершена. ID анализа: <code>{{ result.analysis_id }}</code>
+</div>
+
+{# ── Uploaded files ── #}
+<div class="report-section">
+    <h3>Загруженные файлы</h3>
+    <table class="kpi-table">
+        <thead>
+            <tr><th>Файл</th><th>Формат</th><th class="num-col">Размер</th></tr>
+        </thead>
+        <tbody>
+            {% for f in saved_files %}
+            <tr>
+                <td>{{ f.original_filename }}</td>
+                <td>{{ f.extension }}</td>
+                <td class="num-col">{{ "%.2f"|format(f.size_mb) }} МБ</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{# ── What was found ── #}
+<div class="report-section">
+    <h3>Что найдено</h3>
+    <div class="detected-badges">
+        <span class="detect-badge {{ 'badge-found' if 'pnl' in result.detected_reports else 'badge-missing' }}">
+            БДР {{ '✓' if 'pnl' in result.detected_reports else '✗' }}
+        </span>
+        <span class="detect-badge {{ 'badge-found' if 'cashflow' in result.detected_reports else 'badge-missing' }}">
+            ДДС {{ '✓' if 'cashflow' in result.detected_reports else '✗' }}
+        </span>
+    </div>
+</div>
+
+{# ── Отчетный период ── #}
+{% set period = result.period %}
+<div class="report-section">
+    <h3>Отчетный период</h3>
+    {% if period and period.period_label %}
+    <table class="kpi-table">
+        <tbody>
+            <tr class="row-filled">
+                <td>Период</td>
+                <td>{{ period.period_label }}</td>
+            </tr>
+            {% if period.month_names %}
+            <tr class="row-filled">
+                <td>Месяцы</td>
+                <td>{{ period.month_names | join(', ') }}</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="hint">Отчетный период не удалось определить автоматически.</p>
+    {% endif %}
+
+    {% if result.projects_detected %}
+    <p style="margin-top:0.75rem;"><strong>Проекты / направления:</strong>
+        {{ result.projects_detected | join(', ') }}
+    </p>
+    {% else %}
+    <p class="hint" style="margin-top:0.5rem;">Проектный разрез не обнаружен.</p>
+    {% endif %}
+</div>
+
+{# ── Качество данных ── #}
+{% if quality %}
+{% set q_score = quality.score | default(0) %}
+{% set q_status = quality.status | default('') %}
+<div class="report-section">
+    <h3>Качество данных</h3>
+    <table class="kpi-table">
+        <tbody>
+            <tr class="row-filled">
+                <td>Статус</td>
+                <td>
+                    {% if q_status == 'good' %}
+                    <span class="detect-badge badge-found">good — данные пригодны для анализа</span>
+                    {% elif q_status == 'warning' %}
+                    <span class="detect-badge badge-warning">warning — есть замечания</span>
+                    {% else %}
+                    <span class="detect-badge badge-missing">risky — требуется проверка данных</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr class="row-filled">
+                <td>Оценка качества</td>
+                <td><strong>{{ q_score }}/100</strong></td>
+            </tr>
+        </tbody>
+    </table>
+
+    {% if quality.critical_issues %}
+    <div class="error-block" style="margin-top:0.75rem;">
+        <strong>Критические проблемы:</strong>
+        <ul>{% for issue in quality.critical_issues %}<li>{{ issue }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    {% if quality.warnings %}
+    <div style="margin-top:0.75rem;">
+        <strong>Предупреждения:</strong>
+        <ul class="warning-list">
+            {% for w in quality.warnings %}<li>{{ w }}</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if quality.notes %}
+    <div style="margin-top:0.75rem;">
+        <p class="hint"><strong>Технические примечания:</strong></p>
+        <ul class="warning-list">
+            {% for n in quality.notes %}<li>{{ n }}</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{# ── KPI собственника ── #}
+{% set sk = kpi.summary_kpi if kpi else {} %}
+{% if sk %}
+<div class="report-section">
+    <h3>KPI собственника</h3>
+    {% if kpi.period_label and kpi.period_label != '—' %}
+    <p class="hint">{{ kpi.period_label }}</p>
+    {% endif %}
+    {% if kpi.warnings %}
+    <ul class="warning-list" style="margin-bottom:.75rem;">
+        {% for w in kpi.warnings %}<li>{{ w }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    <table class="kpi-table">
+        <thead>
+            <tr>
+                <th>Показатель</th>
+                <th class="num-col">Значение</th>
+                <th>Источник</th>
+                <th>Смысл</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set _kpi_order = [
+                'revenue','gross_profit','gross_margin',
+                'operating_expenses','operating_expense_ratio',
+                'payroll_ratio','rent_ratio','taxes_ratio',
+                'operating_profit','operating_margin',
+                'break_even_revenue','break_even_gap','break_even_gap_ratio',
+                'net_profit_or_proxy',
+                'operating_cashflow','net_cashflow',
+                'profit_to_operating_cashflow_gap','profit_to_net_cashflow_gap',
+                'profit_to_cash_conversion','net_cashflow_ratio','cash_reserve_months'
+            ] %}
+            {% for key in _kpi_order %}
+            {% set entry = sk.get(key) %}
+            {% if entry %}
+            <tr class="{{ 'row-filled' if entry.value is not none else 'row-empty' }}">
+                <td>{{ entry.label }}</td>
+                <td class="num-col">{{ entry.formatted }}</td>
+                <td class="hint" style="white-space:nowrap;">{{ entry.source }}</td>
+                <td class="hint">{{ entry.interpretation }}</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{# ── Помесячные KPI ── #}
+{% set mk_data = kpi.monthly_kpi if kpi else {} %}
+{% if mk_data %}
+<div class="report-section">
+    <h3>Помесячные KPI</h3>
+    <table class="kpi-table">
+        <thead>
+            <tr>
+                <th>Месяц</th>
+                <th class="num-col">Выручка</th>
+                <th class="num-col">Вал. маржа</th>
+                <th class="num-col">Прибыль</th>
+                <th class="num-col">Рентабельность</th>
+                <th class="num-col">Опер. ДДС</th>
+                <th class="num-col">Чистый ДДС</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for mk in mk_data.keys() | sort %}
+            {% set m = mk_data[mk] %}
+            <tr class="row-filled">
+                <td>{{ m.month_name }}</td>
+                <td class="num-col">{{ m.revenue.formatted }}</td>
+                <td class="num-col">{{ m.gross_margin.formatted }}</td>
+                <td class="num-col">{{ m.operating_profit.formatted }}</td>
+                <td class="num-col">{{ m.operating_margin.formatted }}</td>
+                <td class="num-col">{{ m.operating_cashflow.formatted }}</td>
+                <td class="num-col">{{ m.net_cashflow.formatted }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{# ── Точка безубыточности по месяцам ── #}
+{% if mk_data %}
+<div class="report-section">
+    <h3>Точка безубыточности по месяцам</h3>
+    <p class="hint">Proxy-расчёт: операционные расходы / валовая маржа · расходы не разделены на постоянные и переменные</p>
+    <table class="kpi-table">
+        <thead>
+            <tr>
+                <th>Месяц</th>
+                <th class="num-col">Выручка</th>
+                <th class="num-col">Точка безубыточности</th>
+                <th class="num-col">Разрыв до нуля</th>
+                <th class="num-col">Покрытие</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for mk in mk_data.keys() | sort %}
+            {% set m = mk_data[mk] %}
+            <tr class="row-filled">
+                <td>{{ m.month_name }}</td>
+                <td class="num-col">{{ m.revenue.formatted }}</td>
+                <td class="num-col">{{ m.break_even_revenue.formatted if m.break_even_revenue else '—' }}</td>
+                <td class="num-col">{{ m.break_even_gap.formatted if m.break_even_gap else '—' }}</td>
+                <td class="num-col">{{ m.break_even_gap_ratio.formatted if m.break_even_gap_ratio else '—' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{# ── KPI по проектам ── #}
+{% set pk_data = kpi.project_kpi if kpi else {} %}
+{% if pk_data %}
+<div class="report-section">
+    <h3>KPI по проектам</h3>
+    <table class="kpi-table">
+        <thead>
+            <tr>
+                <th>Проект</th>
+                <th class="num-col">Выручка</th>
+                <th class="num-col">Маржа</th>
+                <th class="num-col">Рентабельность</th>
+                <th class="num-col">Прибыль</th>
+                <th>Вклад в результат</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for proj, pd in pk_data.items() %}
+            <tr class="row-filled">
+                <td>{{ proj }}</td>
+                <td class="num-col">{{ pd.revenue.formatted }}</td>
+                <td class="num-col">{{ pd.gross_margin.formatted }}</td>
+                <td class="num-col">{{ pd.operating_margin.formatted }}</td>
+                <td class="num-col">{{ pd.operating_profit.formatted }}</td>
+                <td class="hint">{{ pd.contribution_to_total_profit.interpretation }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{# ── Точка безубыточности по проектам ── #}
+{% if pk_data %}
+<div class="report-section">
+    <h3>Точка безубыточности по проектам</h3>
+    <p class="hint">Proxy-расчёт на основе распределённых расходов проекта · не заменяет анализ постоянных и переменных затрат</p>
+    <table class="kpi-table">
+        <thead>
+            <tr>
+                <th>Проект</th>
+                <th class="num-col">Выручка</th>
+                <th class="num-col">Точка безубыточности</th>
+                <th class="num-col">Разрыв до нуля</th>
+                <th class="num-col">Покрытие</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for proj, pd in pk_data.items() %}
+            <tr class="row-filled">
+                <td>{{ proj }}</td>
+                <td class="num-col">{{ pd.revenue.formatted }}</td>
+                <td class="num-col">{{ pd.break_even_revenue.formatted if pd.break_even_revenue else '—' }}</td>
+                <td class="num-col">{{ pd.break_even_gap.formatted if pd.break_even_gap else '—' }}</td>
+                <td class="num-col">{{ pd.break_even_gap_ratio.formatted if pd.break_even_gap_ratio else '—' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{# ── БДР ── #}
+{% set pnl = result.pnl %}
+{% set pnl_has_data = (pnl.revenue is not none or pnl.operating_profit is not none
+                       or pnl.gross_profit is not none or pnl.net_profit is not none) %}
+
+{% if 'pnl' in result.detected_reports or pnl_has_data %}
+<div class="report-section">
+    <h3>БДР (Бюджет доходов и расходов)</h3>
+
+    <table class="kpi-table">
+        <thead>
+            <tr><th>Показатель</th><th class="num-col">Значение</th></tr>
+        </thead>
+        <tbody>
+            {% for key, label in pnl_labels.items() %}
+            {% if key != 'net_profit_proxy' or pnl.uses_net_profit_proxy %}
+            {% set val = pnl[key] %}
+            <tr class="{{ 'row-filled' if val is not none else 'row-empty' }}">
+                <td>
+                    {{ label }}
+                    {% if key == 'net_profit_proxy' %}
+                    <span class="badge-proxy">proxy</span>
+                    {% elif key == 'gross_profit' and pnl.gross_profit_calculated %}
+                    <span class="badge-calc">расчёт</span>
+                    {% elif key == 'operating_profit' and pnl.operating_profit_calculated %}
+                    <span class="badge-calc">расчёт</span>
+                    {% elif key == 'ebitda_proxy' and pnl.ebitda_proxy_source == 'extracted' %}
+                    <span class="badge-source">из отчёта</span>
+                    {% elif key == 'ebitda_proxy' and pnl.ebitda_proxy_source == 'calculated' %}
+                    <span class="badge-calc">расчёт</span>
+                    {% endif %}
+                </td>
+                <td class="num-col">{{ val | format_number }}</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{# ── Помесячный БДР ── #}
+{% if monthly_pnl_rows %}
+<div class="report-section">
+    <h3>Помесячный БДР</h3>
+    <table class="kpi-table">
+        <thead>
+            <tr>
+                <th>Месяц</th>
+                <th class="num-col">Выручка</th>
+                <th class="num-col">Валовая прибыль</th>
+                <th class="num-col">Расходы</th>
+                <th class="num-col">Прибыль</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for month_key, month_name, mdata in monthly_pnl_rows %}
+            <tr class="row-filled">
+                <td>{{ month_name }}</td>
+                <td class="num-col">{{ mdata.get('revenue') | format_number }}</td>
+                <td class="num-col">{{ mdata.get('gross_profit') | format_number }}</td>
+                <td class="num-col">{{ mdata.get('operating_expenses') | format_number }}</td>
+                <td class="num-col">{{ mdata.get('operating_profit') | format_number }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{# ── БДР по проектам ── #}
+{% if project_pnl_rows %}
+<div class="report-section">
+    <h3>БДР по проектам</h3>
+    <table class="kpi-table">
+        <thead>
+            <tr>
+                <th>Проект</th>
+                <th class="num-col">Выручка</th>
+                <th class="num-col">Валовая прибыль</th>
+                <th class="num-col">Расходы</th>
+                <th class="num-col">Прибыль</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for proj_name, pdata in project_pnl_rows %}
+            <tr class="row-filled">
+                <td>{{ proj_name }}</td>
+                <td class="num-col">{{ pdata.get('revenue') | format_number }}</td>
+                <td class="num-col">{{ pdata.get('gross_profit') | format_number }}</td>
+                <td class="num-col">{{ pdata.get('operating_expenses') | format_number }}</td>
+                <td class="num-col">{{ pdata.get('operating_profit') | format_number }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{# ── ДДС ── #}
+{% set cf = result.cashflow %}
+{% set cf_has_data = (cf.cash_start is not none or cf.cash_end is not none
+                      or cf.operating_inflows is not none or cf.net_cashflow is not none) %}
+
+{% if 'cashflow' in result.detected_reports or cf_has_data %}
+<div class="report-section">
+    <h3>ДДС (Движение денежных средств)</h3>
+    <table class="kpi-table">
+        <thead>
+            <tr><th>Показатель</th><th class="num-col">Значение</th></tr>
+        </thead>
+        <tbody>
+            {% for key, label in cf_labels.items() %}
+            {% set val = cf[key] %}
+            <tr class="{{ 'row-filled' if val is not none else 'row-empty' }}">
+                <td>
+                    {{ label }}
+                    {% if key == 'net_cashflow' and cf.net_cashflow_calculated %}
+                    <span class="badge-calc">расчёт</span>
+                    {% elif key == 'cash_start' and cf.cash_start_calculated %}
+                    <span class="badge-calc">расчёт</span>
+                    {% elif key == 'operating_outflows' and cf.operating_outflows_source == 'calculated_from_inflows_and_operating_cashflow' %}
+                    <span class="badge-calc">расчёт</span>
+                    {% endif %}
+                </td>
+                <td class="num-col">{{ val | format_number }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{# ── Детализация ДДС ── #}
+{% if sorted_cf_details %}
+<div class="report-section">
+    <h3>Детализация ДДС</h3>
+    <p class="hint">Расшифровка по статьям · отсортировано по сумме</p>
+    <table class="kpi-table">
+        <thead>
+            <tr><th>Статья</th><th class="num-col">Значение</th></tr>
+        </thead>
+        <tbody>
+            {% for label, key, val in sorted_cf_details %}
+            <tr class="row-filled">
+                <td>{{ label }}</td>
+                <td class="num-col">{{ val | format_number }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{# ── Помесячный ДДС ── #}
+{% if monthly_cf_rows %}
+<div class="report-section">
+    <h3>Помесячный ДДС</h3>
+    <table class="kpi-table">
+        <thead>
+            <tr>
+                <th>Месяц</th>
+                <th class="num-col">Операционный</th>
+                <th class="num-col">Инвест.</th>
+                <th class="num-col">Финансовый</th>
+                <th class="num-col">Чистый поток</th>
+                <th class="num-col">Остаток денег</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for month_key, month_name, mdata in monthly_cf_rows %}
+            <tr class="row-filled">
+                <td>{{ month_name }}</td>
+                <td class="num-col">{{ mdata.get('operating_cashflow') | format_number }}</td>
+                <td class="num-col">{{ mdata.get('investment_cashflow') | format_number }}</td>
+                <td class="num-col">{{ mdata.get('financial_cashflow') | format_number }}</td>
+                <td class="num-col">{{ mdata.get('net_cashflow') | format_number }}</td>
+                <td class="num-col">{{ mdata.get('cash_end') | format_number }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endif %}
+
+{# ── Unmapped lines ── #}
+{% if result.unmapped_lines %}
+<div class="report-section">
+    <h3>Нераспознанные строки ({{ result.unmapped_lines | length }})</h3>
+    <p class="hint">
+        Строки, не попавшие ни в одну категорию финансовой модели.
+        Они не влияют на результат.
+    </p>
+    <ul class="warning-list">
+        {% for line in result.unmapped_lines[:30] %}
+        <li>{{ line }}</li>
+        {% endfor %}
+    </ul>
+    {% if result.unmapped_lines | length > 30 %}
+    <p class="hint">… и ещё {{ result.unmapped_lines | length - 30 }} строк</p>
+    {% endif %}
+</div>
+{% endif %}
+
+{# ── Technical path ── #}
+{% if debug_mode %}
+<p class="hint" style="margin: 1.25rem 0 .25rem;">
+    Нормализованный JSON: <code>{{ result.normalized_file_path }}</code>
+</p>
+{% else %}
+<p class="hint" style="margin: 1.25rem 0 .25rem;">Технические данные сохранены.</p>
+{% endif %}
+
+{# ── Управленческий отчёт ── #}
+{% if result.owner_report or result.owner_report_error %}
+<div class="report-section">
+    <h3>Управленческий отчёт</h3>
+    {% if result.owner_report_error %}
+    <div class="status-message error" style="margin-top:.5rem;">
+        AI-отчёт не сформирован.<br>
+        <small>{{ result.owner_report_error }}</small>
+    </div>
+    {% elif owner_report_html %}
+    <div class="report-markdown">
+        {{ owner_report_html | safe }}
+    </div>
+    {% if debug_mode and result.owner_report_path %}
+    <p class="hint" style="margin-top:.75rem;">
+        Markdown-файл: <code>{{ result.owner_report_path }}</code>
+    </p>
+    {% endif %}
+    {% endif %}
+</div>
+{% endif %}
+
+{# ── Вопрос по отчёту (диалог) ── #}
+{% if result.analysis_id %}
+<div class="report-section" id="qa-section">
+    <h3>Задать вопрос по отчёту</h3>
+    <p class="hint">Спросите своими словами. Для расчётных сценариев система сначала построит аналитический план, затем выполнит расчёт на данных отчёта.</p>
+
+    <div id="qa-thread" class="qa-thread"></div>
+
+    <form id="qa-form">
+        <input type="hidden" id="qa-analysis-id" value="{{ result.analysis_id }}">
+        <div class="qa-quick-btns" id="qa-quick-btns">
+            <span class="qa-quick-label">Быстрые вопросы:</span>
+            <button class="qa-quick-btn" type="button" data-q="Какой месяц худший?">Худший месяц</button>
+            <button class="qa-quick-btn" type="button" data-q="Какие проекты убыточные?">Убыточные проекты</button>
+            <button class="qa-quick-btn" type="button" data-q="Сколько не хватило до безубыточности?">До безубыточности</button>
+            <button class="qa-quick-btn" type="button" data-q="Какие расходы проверить?">Расходы</button>
+            <button class="qa-quick-btn" type="button" data-q="Почему прибыль и деньги отличаются?">Прибыль vs деньги</button>
+            <button class="qa-quick-btn" type="button" data-q="Какой ФОТ приемлем?">Норма ФОТ</button>
+        </div>
+        <textarea
+            id="qa-question"
+            rows="3"
+            placeholder="Например: если выручка вырастет на 2 млн в месяц, что изменится?"
+            style="width:100%;padding:.6rem .75rem;border:1px solid #e2e8f0;border-radius:6px;font-size:.95rem;resize:vertical;margin-bottom:.75rem;font-family:inherit;box-sizing:border-box;"
+        ></textarea>
+        <div id="qa-error" style="display:none;margin-bottom:.5rem;color:#c53030;font-size:.95rem;"></div>
+        <button type="submit" id="qa-submit" class="btn btn-primary">Спросить</button>
+    </form>
+</div>
+<script>
+(function () {
+    'use strict';
+
+    var qaHistory = [];
+
+    var form    = document.getElementById('qa-form');
+    var submit  = document.getElementById('qa-submit');
+    var idInput = document.getElementById('qa-analysis-id');
+    var qInput  = document.getElementById('qa-question');
+    var thread  = document.getElementById('qa-thread');
+    var errDiv  = document.getElementById('qa-error');
+
+    if (!form) return;
+
+    document.querySelectorAll('.qa-quick-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            qInput.value = btn.dataset.q;
+            form.dispatchEvent(new Event('submit'));
+        });
+    });
+
+    function safeRemove(parent, child) {
+        if (child && child.parentNode === parent) { parent.removeChild(child); }
+    }
+
+    function makeLabel(text) {
+        var el = document.createElement('div');
+        el.className = 'qa-label';
+        el.textContent = text;
+        return el;
+    }
+
+    function makeUserCard(text) {
+        var div = document.createElement('div');
+        div.className = 'qa-message user';
+        div.appendChild(makeLabel('Вы'));
+        var p = document.createElement('p');
+        p.style.margin = '0';
+        p.textContent = text;
+        div.appendChild(p);
+        return div;
+    }
+
+    function makeLoadingCard() {
+        var div = document.createElement('div');
+        div.className = 'qa-message loading';
+        div.textContent = 'ИИ формирует ответ…';
+        return div;
+    }
+
+    function makeAssistantCard(html) {
+        var div = document.createElement('div');
+        div.className = 'qa-message assistant';
+        div.appendChild(makeLabel('Ассистент'));
+        var content = document.createElement('div');
+        content.className = 'report-markdown';
+        content.innerHTML = html;
+        div.appendChild(content);
+        return div;
+    }
+
+    function makeDebugDetails(queryPlan, answerPayload) {
+        if (!queryPlan) return null;
+        var det = document.createElement('details');
+        det.style.cssText = 'margin-top:6px;font-size:.78rem;color:#718096;';
+        var sum = document.createElement('summary');
+        sum.style.cssText = 'cursor:pointer;color:#a0aec0;';
+        sum.textContent = 'debug: ' + (queryPlan.intent || '?')
+            + ' → [' + (queryPlan.operations || []).join(', ') + ']';
+        det.appendChild(sum);
+        var info = [];
+        if (queryPlan.status) info.push('plan.status: ' + queryPlan.status);
+        if (answerPayload && answerPayload.status) info.push('payload.status: ' + answerPayload.status);
+        var lims = (answerPayload && answerPayload.limitations) || queryPlan.limitations || [];
+        if (lims.length) info.push('limitations: ' + lims.join(' | '));
+        var pre = document.createElement('pre');
+        pre.style.cssText = 'margin:.4rem 0 0;padding:.4rem .5rem;background:#f7fafc;border-radius:4px;overflow-x:auto;white-space:pre-wrap;';
+        pre.textContent = info.join('\n');
+        det.appendChild(pre);
+        return det;
+    }
+
+    function makeErrorCard(text) {
+        var div = document.createElement('div');
+        div.className = 'qa-message assistant';
+        div.style.borderLeftColor = '#e53e3e';
+        var p = document.createElement('p');
+        p.style.cssText = 'margin:0;color:#c53030;';
+        p.textContent = text;
+        div.appendChild(p);
+        return div;
+    }
+
+    form.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var q = qInput.value.trim();
+        if (!q || submit.disabled) return;
+
+        errDiv.style.display = 'none';
+        submit.disabled    = true;
+        submit.textContent = 'Формирую ответ…';
+        qInput.value = '';
+
+        var userCard    = makeUserCard(q);
+        var loadingCard = makeLoadingCard();
+        thread.appendChild(userCard);
+        thread.appendChild(loadingCard);
+        loadingCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        fetch('/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                analysis_id: idInput.value,
+                question:    q,
+                history:     qaHistory.slice(-6)
+            })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            submit.disabled    = false;
+            submit.textContent = 'Спросить';
+            safeRemove(thread, loadingCard);
+
+            if (d.status === 'success' && d.answer_html) {
+                qaHistory.push({
+                    question:       q,
+                    answer:         d.answer_markdown || '',
+                    query_plan:     d.query_plan     || null,
+                    answer_payload: d.answer_payload || null,
+                    metadata:       d.metadata       || null
+                });
+                var card = makeAssistantCard(d.answer_html);
+                thread.appendChild(card);
+                var dbg = makeDebugDetails(d.query_plan, d.answer_payload);
+                if (dbg) thread.appendChild(dbg);
+                card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
+                var errCard = makeErrorCard(d.error || 'Произошла ошибка. Попробуйте ещё раз.');
+                thread.appendChild(errCard);
+                errCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        })
+        .catch(function () {
+            submit.disabled    = false;
+            submit.textContent = 'Спросить';
+            safeRemove(thread, loadingCard);
+            thread.appendChild(makeErrorCard('Сетевая ошибка. Проверьте подключение и повторите.'));
+        });
+    });
+}());
+</script>
+{% endif %}
+
+{# ── Analysis context ── #}
+{% if debug_mode %}
+<div class="report-section">
+    <h3>Analysis context</h3>
+    {% if result.analysis_context_path %}
+    <p class="hint">Путь к файлу: <code>{{ result.analysis_context_path }}</code></p>
+    {% else %}
+    <p class="hint">Контекст анализа не сформирован.</p>
+    {% endif %}
+</div>
+{% else %}
+<p class="hint" style="margin: 0.5rem 0 0.25rem;">Контекст анализа сформирован.</p>
+{% endif %}
+
+{# ── Next stages info ── #}
+<div class="next-step-block">
+    <h3>Следующий этап</h3>
+    <p>
+        Контекст анализа сохранён и готов к формированию управленческого отчёта.
+    </p>
+    <a href="/upload" class="btn btn-secondary">Загрузить новый отчёт</a>
+</div>
+
+</div>{# /container result-body #}
+
+{% endblock %}

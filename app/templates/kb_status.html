@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}База знаний — Финансовый ассистент{% endblock %}
+
+{% block content %}
+
+<h2>База знаний</h2>
+
+{# ── Общая информация ── #}
+<div class="report-section">
+    <h3>Общая информация</h3>
+    <table class="kpi-table">
+        <tbody>
+            <tr class="row-filled"><td>Название</td><td>{{ kb_name }}</td></tr>
+            <tr class="row-filled"><td>Версия</td><td>{{ kb_version }}</td></tr>
+            <tr class="row-filled">
+                <td>Статус</td>
+                <td>
+                    {% if kb_status.status == 'success' %}
+                    <span class="badge-found">OK</span>
+                    {% else %}
+                    <span class="badge-missing">Ошибки</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+{# ── Ошибки ── #}
+{% if kb_status.errors %}
+<div class="error-block">
+    <strong>Ошибки ({{ kb_status.errors | length }}):</strong>
+    <ul>
+        {% for err in kb_status.errors %}
+        <li>{{ err }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{# ── Предупреждения ── #}
+{% if kb_status.warnings %}
+<div class="status-message warning">
+    <strong>Предупреждения:</strong>
+    <ul>
+        {% for w in kb_status.warnings %}
+        <li>{{ w }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{# ── Количество alias ── #}
+<div class="report-section">
+    <h3>Маппинг строк</h3>
+    <table class="kpi-table">
+        <thead>
+            <tr><th>Раздел</th><th class="num-col">Alias</th></tr>
+        </thead>
+        <tbody>
+            {% for section, count in alias_counts.items() %}
+            <tr class="{{ 'row-filled' if count > 0 else 'row-empty' }}">
+                <td>{{ section }}</td>
+                <td class="num-col">{{ count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{# ── Обязательные файлы ── #}
+<div class="report-section">
+    <h3>Обязательные файлы ({{ required_files | length }})</h3>
+    <table class="kpi-table">
+        <thead>
+            <tr><th>Файл</th></tr>
+        </thead>
+        <tbody>
+            {% for f in required_files %}
+            <tr class="row-filled"><td><code>{{ f }}</code></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="next-step-block">
+    <a href="/upload" class="btn btn-secondary">Загрузить отчёт</a>
+</div>
+
+{% endblock %}

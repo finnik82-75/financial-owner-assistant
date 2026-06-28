@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Ответ на вопрос — Финансовый ассистент{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom:1.5rem;">Ответ на вопрос</h2>
+
+{% if question %}
+<div class="report-section">
+    <h3 style="margin-bottom:.5rem;">Вопрос</h3>
+    <p style="color:#1a1a2e;margin:0;">{{ question }}</p>
+</div>
+{% endif %}
+
+{% if error %}
+<div class="report-section" style="border-left:4px solid #e53e3e;">
+    <p style="color:#c53030;margin:0;">{{ error }}</p>
+</div>
+{% elif answer_html %}
+<div class="report-section">
+    <div class="report-markdown">
+        {{ answer_html | safe }}
+    </div>
+    {% if debug_mode and model %}
+    <p class="hint" style="margin-top:.75rem;border-top:1px solid #e2e8f0;padding-top:.5rem;">
+        Модель: <code>{{ model }}</code>
+    </p>
+    {% endif %}
+</div>
+{% else %}
+<div class="report-section" style="border-left:4px solid #d69e2e;">
+    <p style="color:#744210;margin:0;">Ответ не получен. Попробуйте ещё раз.</p>
+</div>
+{% endif %}
+
+{% if analysis_id %}
+<div class="report-section" style="background:#f7fafc;">
+    <h3 style="margin-bottom:.75rem;">Задать ещё вопрос</h3>
+    <p class="hint">Спросите об отдельном показателе, проекте или периоде.</p>
+    <form method="post" action="/ask-page">
+        <input type="hidden" name="analysis_id" value="{{ analysis_id }}">
+        <textarea
+            name="question"
+            rows="3"
+            placeholder="Введите следующий вопрос…"
+            style="width:100%;padding:.6rem .75rem;border:1px solid #e2e8f0;border-radius:6px;font-size:.95rem;resize:vertical;margin-bottom:.75rem;font-family:inherit;box-sizing:border-box;"
+        ></textarea>
+        <button type="submit" class="btn btn-primary">Спросить</button>
+    </form>
+</div>
+{% endif %}
+
+<div style="margin-top:1rem;display:flex;gap:.75rem;flex-wrap:wrap;">
+    <button type="button" class="btn btn-secondary" onclick="history.back()">← Назад к отчёту</button>
+    <a href="/upload" class="btn btn-secondary">Загрузить новый отчёт</a>
+</div>
+{% endblock %}

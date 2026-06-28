@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Данные нормализованы — Финансовый ассистент{% endblock %}
+
+{% block content %}
+
+<h2>Данные нормализованы</h2>
+
+{% set status_cls = 'success' if result.status == 'success' else ('warning' if result.status == 'partial' else 'error') %}
+<div class="status-message {{ status_cls }}">
+    Данные приведены к управленческой модели БДР / ДДС.
+    {% if result.detected_reports %}
+    Обнаружены отчёты: <strong>{{ result.detected_reports | join(', ') | upper }}</strong>.
+    {% endif %}
+    ID: <code>{{ result.analysis_id }}</code>
+</div>
+
+{% if result.warnings %}
+<div class="error-block">
+    <strong>Предупреждения нормализации:</strong>
+    <ul>{% for w in result.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+{# ── БДР ── #}
+{% set pnl = result.pnl %}
+{% set pnl_has_data = (pnl.revenue is not none or pnl.net_profit is not none
+                       or pnl.operating_profit is not none or pnl.gross_profit is not none) %}
+
+{% if 'pnl' in result.detected_reports or 'mixed' in result.detected_reports or pnl_has_data %}
+<div class="report-section">
+    <h3>БДР (Бюджет доходов и расходов)</h3>
+
+    {% if pnl.uses_net_profit_proxy %}
+    <div class="status-message warning" style="margin-bottom:1rem;">
+        Чистая прибыль в отчёте не найдена.
+        Используется «Прибыль от осн. деятельности» как приближение (proxy).
+    </div>
+    {% endif %}
+
+    <table class="kpi-table">
+        <thead>
+            <tr><th>Показатель</th><th class="num-col">Значение</th></tr>
+        </thead>
+        <tbody>
+            {% for key, label in pnl_labels.items() %}
+            {% if key != 'net_profit_proxy' or pnl.uses_net_profit_proxy %}
+            {% set val = pnl[key] %}
+            <tr class="{{ 'row-filled' if val is not none else 'row-empty' }}">
+                <td>
+                    {{ label }}
+                    {% if key == 'net_profit_proxy' %}
+                    <span class="badge-proxy">proxy</span>
+                    {% elif key == 'gross_profit' and pnl.gross_profit_calculated %}
+                    <span class="badge-calc">расчёт</span>
+                    {% elif key == 'operating_profit' and pnl.operating_profit_calculated %}
+                    <span class="badge-calc">расчёт</span>
+                    {% endif %}
+                </td>
+                <td class="num-col">{{ val | format_number }}</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{# ── ДДС ── #}
+{% set cf = result.cashflow %}
+{% set cf_has_data = (cf.cash_start is not none or cf.cash_end is not none
+                      or cf.operating_inflows is not none or cf.net_cashflow is not none) %}
+
+{% if 'cashflow' in result.detected_reports or 'mixed' in result.detected_reports or cf_has_data %}
+<div class="report-section">
+    <h3>ДДС (Движение денежных средств)</h3>
+    <table class="kpi-table">
+        <thead>
+            <tr><th>Показатель</th><th class="num-col">Значение</th></tr>
+        </thead>
+        <tbody>
+            {% for key, label in cf_labels.items() %}
+            {% set val = cf[key] %}
+            <tr class="{{ 'row-filled' if val is not none else 'row-empty' }}">
+                <td>{{ label }}</td>
+                <td class="num-col">{{ val | format_number }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{# ── Unmapped lines ── #}
+{% if result.unmapped_lines %}
+<div class="report-section">
+    <h3>Нераспознанные строки ({{ result.unmapped_lines | length }})</h3>
+    <p class="hint">
+        Строки, не попавшие ни в одну категорию. Они не влияют на результат —
+        только собираются для доработки маппинга.
+    </p>
+    <ul class="warning-list">
+        {% for line in result.unmapped_lines[:30] %}
+        <li>{{ line }}</li>
+        {% endfor %}
+    </ul>
+    {% if result.unmapped_lines | length > 30 %}
+    <p class="hint">… и ещё {{ result.unmapped_lines | length - 30 }} строк</p>
+    {% endif %}
+</div>
+{% endif %}
+
+{# ── Next step ── #}
+<div class="next-step-block">
+    <h3>Нормализованный JSON</h3>
+    <p>
+        Сохранён:<br>
+        <code>{{ result.normalized_file_path }}</code>
+    </p>
+    <a href="/upload" class="btn btn-secondary">Загрузить новый отчёт</a>
+</div>
+
+{% endblock %}

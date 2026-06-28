@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Данные извлечены — Финансовый ассистент{% endblock %}
+
+{% block content %}
+
+<h2>Данные извлечены</h2>
+
+<div class="status-message {% if result.status == 'success' %}success{% elif result.status == 'error' %}error{% else %}warning{% endif %}">
+    Это технический результат извлечения. Финансовая нормализация БДР/ДДС
+    будет выполнена на следующем этапе.
+    ID анализа: <code>{{ result.analysis_id }}</code>
+</div>
+
+{% if result.global_warnings %}
+<div class="error-block">
+    <strong>Предупреждения:</strong>
+    <ul>{% for w in result.global_warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+{# ── Summary table ── #}
+<div class="report-section">
+    <h3>Результаты по файлам</h3>
+    <table class="kpi-table">
+        <thead>
+            <tr>
+                <th>Исходный файл</th>
+                <th>Тип</th>
+                <th>Статус</th>
+                <th>Найдено</th>
+                <th>Предупреждения</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for doc in result.documents %}
+            <tr>
+                <td>{{ doc.original_filename }}</td>
+                <td>{{ doc.file_type | upper }}</td>
+                <td class="status-{{ doc.status }}">{{ doc.status }}</td>
+                <td>
+                    {% if doc.file_type == 'excel' %}
+                        {{ doc.sheets | length }} листов
+                    {% elif doc.file_type == 'pdf' %}
+                        {{ doc.pages_count }} стр. / {{ doc.tables_count }} таблиц
+                    {% else %}—{% endif %}
+                </td>
+                <td>
+                    {% if doc.warnings %}
+                        {{ doc.warnings | join(' · ') }}
+                    {% else %}—{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{# ── Per-document detail ── #}
+{% for doc in result.documents %}
+<div class="report-section">
+    <h3>{{ doc.original_filename }}</h3>
+
+    {% if doc.status == 'error' %}
+    <div class="error-block">{{ doc.error }}</div>
+
+    {% elif doc.file_type == 'excel' %}
+
+        {% for sheet in doc.sheets %}
+        <h4 class="sheet-title">Лист: {{ sheet.sheet_name }}</h4>
+        <p class="hint">Строк: {{ sheet.rows_count }} &nbsp;&bull;&nbsp; Колонок: {{ sheet.columns_count }}</p>
+
+        {% if sheet.records %}
+        <div class="table-scroll">
+        <table class="kpi-table small-table">
+            <thead>
+                <tr>{% for col in sheet.columns %}<th>{{ col }}</th>{% endfor %}</tr>
+            </thead>
+            <tbody>
+                {% for row in sheet.records[:8] %}
+                <tr>{% for col in sheet.columns %}<td>{{ row[col] }}</td>{% endfor %}</tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% if sheet.rows_count > 8 %}
+        <p class="hint">… и ещё {{ sheet.rows_count - 8 }} строк</p>
+        {% endif %}
+        {% endif %}
+        {% endfor %}
+
+    {% elif doc.file_type == 'pdf' %}
+
+        <p class="hint">Страниц: {{ doc.pages_count }} &nbsp;&bull;&nbsp; Таблиц: {{ doc.tables_count }}</p>
+
+        {% for page in doc.pages %}
+        <h4 class="sheet-title">Страница {{ page.page_number }}</h4>
+
+        {% if page.text %}
+        <div class="text-preview">{{ page.text[:500] }}{% if page.text | length > 500 %}&hellip;{% endif %}</div>
+        {% endif %}
+
+        {% if page.tables %}
+        <p class="hint">Таблиц на странице: {{ page.tables | length }}</p>
+        {% for table in page.tables[:1] %}
+        <div class="table-scroll">
+        <table class="kpi-table small-table">
+            <tbody>
+                {% for row in table[:6] %}
+                <tr>{% for cell in row %}<td>{{ cell if cell is not none else '—' }}</td>{% endfor %}</tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% if table | length > 6 %}
+        <p class="hint">… и ещё {{ table | length - 6 }} строк в таблице</p>
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+
+        {% endfor %}
+    {% endif %}
+
+    {% if doc.warnings %}
+    <ul class="warning-list">
+        {% for w in doc.warnings %}<li>{{ w }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+</div>
+{% endfor %}
+
+{# ── Next step ── #}
+<div class="next-step-block">
+    <h3>Следующий шаг — нормализация</h3>
+    <p>
+        Система сопоставит извлечённые строки с канонической моделью БДР / ДДС
+        и подготовит структурированный финансовый контекст для анализа.<br>
+        <span class="hint">JSON сохранён: <code>{{ result.parsed_file_path }}</code></span>
+    </p>
+
+    <form action="/normalize" method="post" style="display:inline;">
+        <input type="hidden" name="parsed_file_path" value="{{ result.parsed_file_path }}">
+        <button type="submit" class="btn btn-primary">Нормализовать данные</button>
+    </form>
+
+    <a href="/upload" class="btn btn-secondary" style="margin-left:.75rem;">
+        Загрузить новый отчёт
+    </a>
+</div>
+
+{% endblock %}
