@@ -37,14 +37,14 @@ body {
 .site-header {
   background: var(--brand-blue);
   color: #FFFFFF;
-  padding: 20px 0;
+  padding: 12px 0;
 }
 
 .header-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 32px;
+  gap: 24px;
 }
 
 .brand-link {
@@ -59,13 +59,13 @@ body {
   align-items: center;
   justify-content: center;
   background: #FFFFFF;
-  border-radius: 16px;
-  padding: 10px 14px;
+  border-radius: 14px;
+  padding: 8px 12px;
 }
 
 .header-logo {
   display: block;
-  width: 230px;
+  width: 155px;
   max-width: 100%;
   height: auto;
 }
@@ -162,14 +162,18 @@ main { flex: 1; }
 .hero {
   background: var(--brand-blue);
   color: #FFFFFF;
-  padding: 48px 0 78px;
+  padding: 40px 0 62px;
 }
 
 .hero-inner {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
-  gap: 48px;
+  grid-template-columns: 1fr;
+  gap: 24px;
   align-items: center;
+}
+
+.hero-content {
+  max-width: 760px;
 }
 
 .hero-kicker {
@@ -191,7 +195,7 @@ main { flex: 1; }
 
 .hero p {
   margin: 22px 0 0;
-  max-width: 680px;
+  max-width: 700px;
   color: rgba(255,255,255,.84);
   font-size: 18px;
   line-height: 1.6;
