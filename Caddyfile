@@ -1,0 +1,4 @@
+# Replace your-domain.ru with your real domain name.
+your-domain.ru {
+    reverse_proxy app:8010
+}

@@ -141,11 +141,58 @@ docker compose up --build -d
 - пользовательские отчёты не коммитить
 - директории `data/uploads`, `data/parsed`, `data/outputs` не публиковать и не добавлять в публичные репозитории
 
-## 13. Следующий production-этап
+## 13. Production-запуск с доменом и SSL через Caddy
 
-После MVP можно перейти к более производительному и безопасному размещению:
+Для production-развёртывания можно использовать production-compose-файл с Caddy и автоматическим SSL Let's Encrypt.
 
-- Nginx или Caddy
-- домен
-- SSL Let's Encrypt
-- закрытие прямого доступа к порту 8010 при необходимости
+### 13.1. Подготовка домена
+
+1. Укажите A-запись вашего домена на IP сервера.
+2. Замените `your-domain.ru` в файле `Caddyfile` на реальный домен.
+3. Пример:
+
+```bash
+nano Caddyfile
+```
+
+```caddy
+example.com {
+    reverse_proxy app:8010
+}
+```
+
+### 13.2. Запуск production-режима
+
+```bash
+docker compose -f docker-compose.prod.yml up --build -d
+```
+
+### 13.3. Проверка состояния
+
+```bash
+docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml logs -f
+```
+
+### 13.4. Обновление
+
+```bash
+git pull
+docker compose -f docker-compose.prod.yml up --build -d
+```
+
+### 13.5. Остановка
+
+```bash
+docker compose -f docker-compose.prod.yml down
+```
+
+Caddy автоматически получит SSL-сертификат Let's Encrypt, если DNS-запись домена уже указывает на сервер и порт 80/443 открыт.
+
+### 13.6. Следующий этап
+
+После базового production-развёртывания можно дополнительно:
+
+- установить Nginx или Caddy в более сложной конфигурации;
+- добавить домен и SSL;
+- закрыть прямой доступ к порту 8010 при необходимости.

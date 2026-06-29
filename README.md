@@ -88,9 +88,12 @@ docker compose up --build
 ```
 
 После запуска приложение будет доступно по адресу [http://localhost:8010](http://localhost:8010).
+
 ## Развёртывание на VPS/VDS
 
 Подробная инструкция доступна в [docs/deployment_guide.md](docs/deployment_guide.md).
+Для production с доменом и SSL через Caddy см. раздел про [production-запуск](docs/deployment_guide.md#13-production-запуск-с-доменом-и-ssl-через-caddy).
+
 ## Переменные окружения
 
 Минимально необходимые переменные в файле `.env`:
