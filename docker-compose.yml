@@ -1,0 +1,15 @@
+services:
+  financial-owner-assistant:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: financial-owner-assistant
+    env_file:
+      - .env
+    ports:
+      - "8010:8010"
+    volumes:
+      - ./data/uploads:/app/data/uploads
+      - ./data/parsed:/app/data/parsed
+      - ./data/outputs:/app/data/outputs
+    restart: unless-stopped

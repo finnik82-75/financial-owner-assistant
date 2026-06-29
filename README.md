@@ -81,6 +81,14 @@ uvicorn app.main:app --reload --port 8010
 
 Приложение будет доступно по адресу [http://localhost:8010](http://localhost:8010).
 
+## Запуск через Docker
+
+```bash
+docker compose up --build
+```
+
+После запуска приложение будет доступно по адресу [http://localhost:8010](http://localhost:8010).
+
 ## Переменные окружения
 
 Минимально необходимые переменные в файле `.env`:
